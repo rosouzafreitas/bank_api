@@ -20,5 +20,16 @@ CREATE TABLE accounts (
     user_id UUID,
     social_id VARCHAR(11),
     password VARCHAR(255),
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(social_id) REFERENCES users(social_id)
+);
+
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY,
+    origin_account UUID,
+    destination_account UUID,
+    transaction_type VARCHAR(8),
+    value REAL,
+    FOREIGN KEY(origin_account) REFERENCES accounts(id),
+    FOREIGN KEY(destination_account) REFERENCES accounts(id)
 );
