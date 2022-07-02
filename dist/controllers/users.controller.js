@@ -8,9 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.updateUser = exports.createUser = exports.getUserById = exports.getUsers = void 0;
 const uuid_1 = require("uuid");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const saltRounds = 10;
 const database_1 = require("../database");
 const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -37,15 +42,21 @@ const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.getUserById = getUserById;
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, birth_date, email, social_id } = req.body;
-        const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id) VALUES ($1, $2, $3, $4, $5)', [(0, uuid_1.v4)(), name, birth_date, email, social_id]);
+        const { name, birth_date, email, social_id, password } = req.body;
+        const regex = /^\d+$/;
+        if (password.length < 6 || password.length > 6 || !regex.test(password)) {
+            return res.status(400).json({ message: 'Please insert a 6-digit numeric password' });
+        }
+        const hashPassword = yield bcrypt_1.default.hash(password, saltRounds);
+        const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [(0, uuid_1.v4)(), name, birth_date, email, social_id, hashPassword]);
         return res.status(200).json({
             body: {
                 user: {
                     name,
                     birth_date,
                     email,
-                    social_id
+                    social_id,
+                    password
                 }
             },
             message: "User created succesfully"
@@ -53,7 +64,7 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
     catch (e) {
         console.log(e);
-        return res.status(500).json('Could not create user');
+        return res.status(500).json({ message: 'Could not create user' });
     }
 });
 exports.createUser = createUser;
