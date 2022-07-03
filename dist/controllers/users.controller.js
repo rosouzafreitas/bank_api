@@ -17,6 +17,8 @@ const uuid_1 = require("uuid");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const saltRounds = 10;
 const database_1 = require("../database");
+const users_service_1 = require("../services/users.service");
+const userServices = new users_service_1.UserServices();
 class UsersController {
     constructor() {
         this.getUsers = (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -41,15 +43,12 @@ class UsersController {
             }
         });
         this.createUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const { body } = req.body;
             try {
                 const { name, birth_date, email, social_id, password } = req.body;
-                const date_regex = /^((?:(?=29[\/\-.]0?2[\/\-.](?:[1-9]\d)?(?:[02468][048]|[13579][26])(?!\d))29)|(?:(?=31[\/\-.](?!11)0?[13578]|1[02])31)|(?:(?=\d?\d[\/\-.]\d?\d[\/\-.])(?!29[\/\-.]0?2)(?!31)(?:[12][0-9]|30|0?[1-9])))[\/\-.](0?[1-9]|1[0-2])[\/\-.]((?:[1-9]\d)?\d{2})$/;
-                if (!date_regex.test(birth_date)) {
+                if (!userServices.checkDate(birth_date)) {
                     return res.status(400).json({ message: 'Please insert a valid birth date in the format DD/MM/YYYY' });
                 }
-                const email_regex = /^(\S+)@((?:(?:(?!-)[a-zA-Z0-9-]{1,62}[a-zA-Z0-9])\.)+[a-zA-Z0-9]{2,12})$/;
-                if (!email_regex.test(email)) {
+                if (!userServices.checkEmail(email)) {
                     return res.status(400).json({ message: 'Please insert a valid e-mail address' });
                 }
                 const social_id_regex = /(\d{3})[.]?(\d{3})[.]?(\d{3})[-]?(\d{2})/gm;
