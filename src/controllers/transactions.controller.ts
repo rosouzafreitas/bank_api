@@ -46,12 +46,26 @@ export const depositIntoAccount = async (req: Request, res: Response): Promise<R
             return res.status(400).json({message: 'Please insert a positive numeric value to deposit, use point (.) instead of comma'})
         }
 
+        const tax = parseFloat(value) * 0.01;
+
+        const date = new Date();
+
         const response: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-            account.rows[0]['balance'] + parseFloat(value),
+            account.rows[0]['balance'] + parseFloat(value) - tax,
             account.rows[0]['id']
         ]);
+
+        const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
+            uuidv4(),
+            account.rows[0]['id'],
+            null,
+            'deposit',
+            parseFloat(value),
+            date,
+            tax
+        ]);
         return res.status(200).json({
-            message: `Deposited succesfully ${value}`
+            message: `Deposited succesfully ${value - tax} BRL, a deposit tax of ${tax.toFixed(4)} BRL was charged`
         });
     } catch (e) {
         console.log(e);
@@ -106,16 +120,34 @@ export const withdrawFromAccount = async (req: Request, res: Response): Promise<
             return res.status(400).json({message: 'Please insert a positive numeric value to withdraw, use point (.) instead of comma'})
         }
 
+        if(parseFloat(value) < 5) {
+            return res.status(401).json({message: 'The minimum ammount to withdraw is 5 BRL'})
+        }
+
         if(parseFloat(value) > account.rows[0]['balance']) {
             return res.status(401).json({message: 'Insufficient funds'})
         }
+
+        const tax = 4;
+
+        const date = new Date();
 
         const response: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
             account.rows[0]['balance'] - parseFloat(value),
             account.rows[0]['id']
         ]);
+
+        const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
+            uuidv4(),
+            account.rows[0]['id'],
+            null,
+            'withdraw',
+            parseFloat(value),
+            date,
+            tax
+        ]);
         return res.status(200).json({
-            message: `Withdrawed succesfully ${value}`
+            message: `Withdrawed succesfully ${value - tax} BRL, a fixed withdraw tax of ${tax} BRL was charged`
         });
     } catch (e) {
         console.log(e);
@@ -197,26 +229,32 @@ export const transferFromAccount = async (req: Request, res: Response): Promise<
             return res.status(401).json({message: 'Insufficient funds'})
         }
 
+        const tax = 1;
+
+        const date = new Date();
+
         const from: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
             account.rows[0]['balance'] - parseFloat(value),
             account.rows[0]['id']
         ]);
 
         const to: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-            destination.rows[0]['balance'] + parseFloat(value),
+            destination.rows[0]['balance'] + parseFloat(value) - tax,
             destination.rows[0]['id']
         ]);
 
-        const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value) VALUES ($1, $2, $3, $4, $5)', [
+        const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
             uuidv4(),
             account.rows[0]['id'],
             destination.rows[0]['id'],
             'transfer',
-            parseFloat(value)
+            parseFloat(value),
+            date,
+            tax
         ]);
 
         return res.status(200).json({
-            message: `Transfered succesfully ${value}`
+            message: `Transfered succesfully ${value - tax} BRL, a fixed transfer tax of ${tax} BRL was charged`
         });
     } catch (e) {
         console.log(e);

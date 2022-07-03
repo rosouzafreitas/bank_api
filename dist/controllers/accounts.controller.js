@@ -143,8 +143,7 @@ const viewStatementBySocialId = (req, res) => __awaiter(void 0, void 0, void 0, 
                 message: "Password is wrong for this account"
             });
         }
-        /*const statement: QueryResult = await pool.query('SELECT * FROM transactions WHERE origin_account = $1 OR destination_account = $1', [account.rows[0]['id']])*/
-        const statement = yield database_1.pool.query('SELECT transactions.id, (SELECT users.name FROM users WHERE users.id = (SELECT user_id FROM accounts WHERE id = transactions.origin_account)) AS sender, transactions.origin_account, (SELECT users.name FROM users WHERE users.id = (SELECT user_id FROM accounts WHERE id = transactions.destination_account)) AS receiver, transactions.destination_account, transactions.transaction_type, transactions.value FROM transactions WHERE origin_account = $1 OR destination_account = $1', [account.rows[0]['id']]);
+        const statement = yield database_1.pool.query('SELECT transactions.id, (SELECT users.name FROM users WHERE users.id = (SELECT user_id FROM accounts WHERE id = transactions.origin_account)) AS sender, transactions.origin_account, (SELECT users.name FROM users WHERE users.id = (SELECT user_id FROM accounts WHERE id = transactions.destination_account)) AS receiver, transactions.destination_account, transactions.transaction_type, transactions.value, transactions.date, transactions.tax FROM transactions WHERE origin_account = $1 OR destination_account = $1 ORDER BY transactions.date DESC', [account.rows[0]['id']]);
         const balance = account.rows[0]['balance'];
         const account_id = account.rows[0]['id'];
         const full_statement = statement.rows;

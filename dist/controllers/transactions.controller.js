@@ -102,6 +102,9 @@ const withdrawFromAccount = (req, res) => __awaiter(void 0, void 0, void 0, func
         if (!regex.test(value)) {
             return res.status(400).json({ message: 'Please insert a positive numeric value to withdraw, use point (.) instead of comma' });
         }
+        if (parseFloat(value) < 5) {
+            return res.status(401).json({ message: 'The minimum ammount to withdraw is 5 BRL' });
+        }
         if (parseFloat(value) > account.rows[0]['balance']) {
             return res.status(401).json({ message: 'Insufficient funds' });
         }
@@ -121,7 +124,7 @@ const withdrawFromAccount = (req, res) => __awaiter(void 0, void 0, void 0, func
             tax
         ]);
         return res.status(200).json({
-            message: `Withdrawed succesfully ${value - tax} BRL, a withdraw tax of ${tax} BRL was charged`
+            message: `Withdrawed succesfully ${value - tax} BRL, a fixed withdraw tax of ${tax} BRL was charged`
         });
     }
     catch (e) {
@@ -197,7 +200,7 @@ const transferFromAccount = (req, res) => __awaiter(void 0, void 0, void 0, func
             tax
         ]);
         return res.status(200).json({
-            message: `Transfered succesfully ${value - tax} BRL, a transfer tax of ${tax} BRL was charged`
+            message: `Transfered succesfully ${value - tax} BRL, a fixed transfer tax of ${tax} BRL was charged`
         });
     }
     catch (e) {

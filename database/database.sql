@@ -30,6 +30,8 @@ CREATE TABLE transactions (
     destination_account UUID,
     transaction_type VARCHAR(8),
     value REAL,
+    date DATE,
+    tax REAL,
     FOREIGN KEY(origin_account) REFERENCES accounts(id),
     FOREIGN KEY(destination_account) REFERENCES accounts(id)
 );

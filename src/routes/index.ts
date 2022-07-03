@@ -5,7 +5,7 @@ import { getUsers, getUserById, createUser, deleteUser, updateUser } from '../co
 
 import { getAccounts, getAccountsBySocialId, createAccount, deleteAccount, viewStatementBySocialId } from '../controllers/accounts.controller'
 
-import { depositIntoAccount, withdrawFromAccount, transferFromAccount } from '../controllers/transactions.controllers'
+import { depositIntoAccount, withdrawFromAccount, transferFromAccount } from '../controllers/transactions.controller'
 
 
 router.get('/users', getUsers);
