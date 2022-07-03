@@ -5,7 +5,7 @@ CREATE TABLE users (
     name VARCHAR(255),
     birth_date DATE,
     email VARCHAR(255),
-    social_id VARCHAR(11),
+    social_id VARCHAR(11) UNIQUE,
     password VARCHAR(255)
 );
 

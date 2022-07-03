@@ -1,28 +1,34 @@
 import { Router } from 'express';
+
+import { UsersController } from '../controllers/users.controller'
+
+import { AccountsController } from '../controllers/accounts.controller'
+
+import { TransactionsController } from '../controllers/transactions.controller'
+
 const router = Router();
 
-import { getUsers, getUserById, createUser, deleteUser, updateUser } from '../controllers/users.controller'
+const userController = new UsersController();
 
-import { getAccounts, getAccountsBySocialId, createAccount, deleteAccount, viewStatementBySocialId } from '../controllers/accounts.controller'
+const accountController = new AccountsController();
 
-import { depositIntoAccount, withdrawFromAccount, transferFromAccount } from '../controllers/transactions.controller'
+const transactionController = new TransactionsController();
 
+router.get('/users', userController.getUsers);
+router.get('/users/:id', userController.getUserById)
+router.post('/users', userController.createUser)
+router.delete('/users/:id', userController.deleteUser)
+router.put('/users', userController.updateUser)
 
-router.get('/users', getUsers);
-router.get('/users/:id', getUserById)
-router.post('/users', createUser)
-router.delete('/users/:id', deleteUser)
-router.put('/users', updateUser)
+router.get('/accounts', accountController.getAccounts)
+router.get('/accounts/:id', accountController.getAccountsBySocialId)
+router.post('/accounts', accountController.createAccount)
+router.post('/statement', accountController.viewStatementBySocialId)
+router.delete('/accounts/:id', accountController.deleteAccount)
 
-router.get('/accounts', getAccounts)
-router.get('/accounts/:id', getAccountsBySocialId)
-router.post('/accounts', createAccount)
-router.post('/statement', viewStatementBySocialId)
-router.delete('/accounts/:id', deleteAccount)
-
-router.put('/deposit', depositIntoAccount)
-router.put('/withdraw', withdrawFromAccount)
-router.put('/transfer', transferFromAccount)
+router.put('/deposit', transactionController.depositIntoAccount)
+router.put('/withdraw', transactionController.withdrawFromAccount)
+router.put('/transfer', transactionController.transferFromAccount)
 
 
 export default router;
