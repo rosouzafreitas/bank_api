@@ -30,7 +30,6 @@ class UsersController {
     }
     
     createUser = async (req: Request, res: Response): Promise<Response> => {
-        const { body } = req.body;
         try {
             const { name, birth_date, email, social_id, password } = req.body;
 
