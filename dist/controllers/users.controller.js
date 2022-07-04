@@ -37,8 +37,11 @@ class UsersController {
             }
         });
         this.createUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { name, birth_date, email, social_id, password } = req.body;
+            if (!name || !birth_date || !email || !social_id || !password) {
+                return res.status(400).json({ message: 'Please include the fields name, birth_date, email, social_id, password' });
+            }
             try {
-                const { name, birth_date, email, social_id, password } = req.body;
                 const validator = new users_validators_1.UsersValidators();
                 const service = new users_services_1.UsersServices();
                 if (!validator.checkDate(birth_date)) {

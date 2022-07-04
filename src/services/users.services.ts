@@ -14,6 +14,13 @@ class UsersServices {
             return true;
         } else return false;
     }
+
+    checkUserLogin = async (social_id:string, password:string) => {
+        const repository = new UserRepository();
+        if(await repository.loginUser(social_id, password)) {
+            return true;
+        } else return false;
+    }
 }
 
 export { UsersServices }

@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
-import { v4 as uuidv4 } from 'uuid';
 
-import bcrypt from 'bcrypt';
-const saltRounds = 10;
-
-import { pool } from '../database';
+import { UsersServices } from '../services/users.services';
+import { AccountsServices } from '../services/accounts.services';
+import { TransactionsValidators } from '../validators/transactions.validators';
+import { TransactionsServices } from '../services/transactions.services';
 
 class TransactionsController {
     depositIntoAccount = async (req: Request, res: Response): Promise<Response> => {
@@ -16,54 +14,46 @@ class TransactionsController {
         }
     
         try {
-            const db: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [social_id])
+            const UserService = new UsersServices();
+            const AccountService = new AccountsServices();
+            const TransactionValidator = new TransactionsValidators();
+            const TransactionService = new TransactionsServices();
+
+            let numeric_social_id = social_id.split('.').join("");
+            numeric_social_id = numeric_social_id.split('-').join("");
     
-            if(!db.rows[0]) {
+            if(!await UserService.checkUserExists(numeric_social_id)) {
                 return res.status(404).json({message: 'User not found, please create an user account'});
             }
-            
-            const login = await bcrypt.compareSync(user_password, db.rows[0]['password']);
-    
-            if(!login) {
-                return res.status(401).json({
-                    message: "Password is wrong for this user"
-                });
+                
+            if(!await UserService.checkUserLogin(numeric_social_id, user_password)) {
+                return res.status(401).json({message: "Password is wrong for this user"});
             }
     
             if(account_type !== 'current' && account_type !== 'savings') {
-                return res.status(400).json({message: `Please use 'current' or 'savings' as acccount_type`})
+                return res.status(400).json({message: `Please use 'current' or 'savings' as account_type`})
             }
-    
-            const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
-    
-            if(!account.rows[0]) {
+
+            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
     
-            const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-    
-            if(!regex.test(value)) {
+            if(!await TransactionValidator.checkPositiveFloat(value)) {
                 return res.status(400).json({message: 'Please insert a positive numeric value to deposit, use point (.) instead of comma'})
             }
     
             const tax = parseFloat(value) * 0.01;
     
             const date = new Date();
-    
-            const response: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                account.rows[0]['balance'] + parseFloat(value) - tax,
-                account.rows[0]['id']
-            ]);
-    
-            const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                uuidv4(),
-                account.rows[0]['id'],
-                null,
-                'deposit',
-                parseFloat(value),
-                date,
-                tax
-            ]);
+
+            if(!await TransactionService.depositValue(numeric_social_id, account_type, value, tax)) {
+                return res.status(500).json({message: `Could not deposit value`});
+            }
+
+            if(!await TransactionService.registerDepositTransaction(numeric_social_id, account_type, value, date, tax)) {
+                return res.status(500).json({message: `Could not store transaction`});
+            }
+
             return res.status(200).json({
                 message: `Deposited succesfully ${value - tax} BRL, a deposit tax of ${tax.toFixed(4)} BRL was charged`
             });
@@ -82,70 +72,60 @@ class TransactionsController {
         }
     
         try {
-            const db: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [social_id])
+            const UserService = new UsersServices();
+            const AccountService = new AccountsServices();
+            const TransactionValidator = new TransactionsValidators();
+            const TransactionService = new TransactionsServices();
+
+            let numeric_social_id = social_id.split('.').join("");
+            numeric_social_id = numeric_social_id.split('-').join("");
     
-            if(!db.rows[0]) {
+            if(!await UserService.checkUserExists(numeric_social_id)) {
                 return res.status(404).json({message: 'User not found, please create an user account'});
             }
-            
-            const user_login = await bcrypt.compareSync(user_password, db.rows[0]['password']);
-    
-            if(!user_login) {
-                return res.status(401).json({
-                    message: "Password is wrong for this user"
-                });
+                
+            if(!await UserService.checkUserLogin(numeric_social_id, user_password)) {
+                return res.status(401).json({message: "Password is wrong for this user"});
             }
     
             if(account_type !== 'current' && account_type !== 'savings') {
                 return res.status(400).json({message: `Please use 'current' or 'savings' as acccount_type`})
             }
-    
-            const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
-    
-            if(!account.rows[0]) {
+
+            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
-    
-            const account_login = await bcrypt.compareSync(account_password, account.rows[0]['password']);
-    
-            if(!account_login) {
-                return res.status(401).json({
-                    message: "Password is wrong for this account"
-                });
+        
+            if(!await AccountService.checkAccountLogin(numeric_social_id, account_type, account_password)) {
+                return res.status(401).json({message: "Password is wrong for this account"});
             }
     
-            const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-    
-            if(!regex.test(value)) {
+            if(!await TransactionValidator.checkPositiveFloat(value)) {
                 return res.status(400).json({message: 'Please insert a positive numeric value to withdraw, use point (.) instead of comma'})
             }
     
             if(parseFloat(value) < 5) {
-                return res.status(401).json({message: 'The minimum ammount to withdraw is 5 BRL'})
+                return res.status(400).json({message: 'The minimum ammount to withdraw is 5 BRL'})
             }
+
+            const balance = await AccountService.getAccountFunds(numeric_social_id, account_type, account_password)
     
-            if(parseFloat(value) > account.rows[0]['balance']) {
+            if(parseFloat(value) > balance) {
                 return res.status(401).json({message: 'Insufficient funds'})
             }
     
             const tax = 4;
     
             const date = new Date();
-    
-            const response: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                account.rows[0]['balance'] - parseFloat(value),
-                account.rows[0]['id']
-            ]);
-    
-            const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                uuidv4(),
-                account.rows[0]['id'],
-                null,
-                'withdraw',
-                parseFloat(value),
-                date,
-                tax
-            ]);
+
+            if(!await TransactionService.withdrawValue(numeric_social_id, account_type, value)) {
+                return res.status(500).json({message: `Could not withdraw value`});
+            }
+
+            if(!await TransactionService.registerWithdrawTransaction(numeric_social_id, account_type, value, date, tax)) {
+                return res.status(500).json({message: `Could not store transaction`});
+            }
+
             return res.status(200).json({
                 message: `Withdrawed succesfully ${value - tax} BRL, a fixed withdraw tax of ${tax} BRL was charged`
             });
@@ -171,87 +151,71 @@ class TransactionsController {
         }
     
         try {
-            const db: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [social_id])
+            const UserService = new UsersServices();
+            const AccountService = new AccountsServices();
+            const TransactionValidator = new TransactionsValidators();
+            const TransactionService = new TransactionsServices();
+
+            let numeric_social_id = social_id.split('.').join("");
+            numeric_social_id = numeric_social_id.split('-').join("");
     
-            if(!db.rows[0]) {
+            if(!await UserService.checkUserExists(numeric_social_id)) {
                 return res.status(404).json({message: 'User not found, please create an user account'});
             }
-            
-            const user_login = await bcrypt.compareSync(user_password, db.rows[0]['password']);
-    
-            if(!user_login) {
-                return res.status(401).json({
-                    message: "Password is wrong for this user"
-                });
+                
+            if(!await UserService.checkUserLogin(numeric_social_id, user_password)) {
+                return res.status(401).json({message: "Password is wrong for this user"});
             }
     
             if(account_type !== 'current' && account_type !== 'savings') {
                 return res.status(400).json({message: `Please use 'current' or 'savings' as acccount_type`})
             }
-    
-            const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
-    
-            if(!account.rows[0]) {
+
+            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
-    
-            const account_login = await bcrypt.compareSync(account_password, account.rows[0]['password']);
-    
-            if(!account_login) {
-                return res.status(401).json({
-                    message: "Password is wrong for this account"
-                });
+        
+            if(!await AccountService.checkAccountLogin(numeric_social_id, account_type, account_password)) {
+                return res.status(401).json({message: "Password is wrong for this account"});
             }
-    
-            const uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    
-            if(!uuid_regex.test(destination_account_id)) {
+        
+            if(!await TransactionValidator.checkValidUUID(destination_account_id)) {
                 return res.status(400).json({message: `The destination account id inserted isn't valid`})
             }
-    
-            const destination: QueryResult = await pool.query('SELECT * FROM accounts WHERE id = $1', [destination_account_id])
-    
-            if(!destination.rows[0]) {
+        
+            if(!await AccountService.checkAccountExistsByUUID(destination_account_id)) {
                 return res.status(401).json({message: `Account ${destination_account_id} doesn't exist`});
             }
     
-            if(destination.rows[0]['id'] == account.rows[0]['id']) {
+            if(await AccountService.checkAccountsSameUUID(numeric_social_id, account_type, destination_account_id)) {
                 return res.status(401).json({message: `You can't transfer to the same account`});
             }
     
-            const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-    
-            if(!regex.test(value)) {
+            if(!await TransactionValidator.checkPositiveFloat(value)) {
                 return res.status(400).json({message: 'Please insert a positive numeric value to transfer, use point (.) instead of comma'})
             }
+
+            const balance = await AccountService.getAccountFunds(numeric_social_id, account_type, account_password)
     
-            if(parseFloat(value) > account.rows[0]['balance']) {
+            if(parseFloat(value) > balance) {
                 return res.status(401).json({message: 'Insufficient funds'})
             }
     
             const tax = 1;
     
             const date = new Date();
-    
-            const from: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                account.rows[0]['balance'] - parseFloat(value),
-                account.rows[0]['id']
-            ]);
-    
-            const to: QueryResult = await pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                destination.rows[0]['balance'] + parseFloat(value) - tax,
-                destination.rows[0]['id']
-            ]);
-    
-            const transaction: QueryResult = await pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                uuidv4(),
-                account.rows[0]['id'],
-                destination.rows[0]['id'],
-                'transfer',
-                parseFloat(value),
-                date,
-                tax
-            ]);
+
+            if(!await TransactionService.withdrawValue(numeric_social_id, account_type, value)) {
+                return res.status(500).json({message: `Could not withdraw value`});
+            }
+
+            if(!await TransactionService.depositValueByUUID(destination_account_id, value, tax)) {
+                return res.status(500).json({message: `Could not transfer value`});
+            }
+
+            if(!await TransactionService.registerTransferTransaction(numeric_social_id, account_type, destination_account_id, value, date, tax)) {
+                return res.status(500).json({message: `Could not store transaction`});
+            }
     
             return res.status(200).json({
                 message: `Transfered succesfully ${value - tax} BRL, a fixed transfer tax of ${tax} BRL was charged`

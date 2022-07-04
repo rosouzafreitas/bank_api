@@ -8,15 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionsController = void 0;
-const uuid_1 = require("uuid");
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const saltRounds = 10;
-const database_1 = require("../database");
+const users_services_1 = require("../services/users.services");
+const accounts_services_1 = require("../services/accounts.services");
+const transactions_validators_1 = require("../validators/transactions.validators");
+const transactions_services_1 = require("../services/transactions.services");
 class TransactionsController {
     constructor() {
         this.depositIntoAccount = (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -25,42 +22,35 @@ class TransactionsController {
                 return res.status(400).json({ message: 'Please include the fields social_id, user_password, account_type, account_password, value' });
             }
             try {
-                const db = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
-                if (!db.rows[0]) {
+                const UserService = new users_services_1.UsersServices();
+                const AccountService = new accounts_services_1.AccountsServices();
+                const TransactionValidator = new transactions_validators_1.TransactionsValidators();
+                const TransactionService = new transactions_services_1.TransactionsServices();
+                let numeric_social_id = social_id.split('.').join("");
+                numeric_social_id = numeric_social_id.split('-').join("");
+                if (!(yield UserService.checkUserExists(numeric_social_id))) {
                     return res.status(404).json({ message: 'User not found, please create an user account' });
                 }
-                const login = yield bcrypt_1.default.compareSync(user_password, db.rows[0]['password']);
-                if (!login) {
-                    return res.status(401).json({
-                        message: "Password is wrong for this user"
-                    });
+                if (!(yield UserService.checkUserLogin(numeric_social_id, user_password))) {
+                    return res.status(401).json({ message: "Password is wrong for this user" });
                 }
                 if (account_type !== 'current' && account_type !== 'savings') {
-                    return res.status(400).json({ message: `Please use 'current' or 'savings' as acccount_type` });
+                    return res.status(400).json({ message: `Please use 'current' or 'savings' as account_type` });
                 }
-                const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
-                if (!account.rows[0]) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
-                const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-                if (!regex.test(value)) {
+                if (!(yield TransactionValidator.checkPositiveFloat(value))) {
                     return res.status(400).json({ message: 'Please insert a positive numeric value to deposit, use point (.) instead of comma' });
                 }
                 const tax = parseFloat(value) * 0.01;
                 const date = new Date();
-                const response = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                    account.rows[0]['balance'] + parseFloat(value) - tax,
-                    account.rows[0]['id']
-                ]);
-                const transaction = yield database_1.pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                    (0, uuid_1.v4)(),
-                    account.rows[0]['id'],
-                    null,
-                    'deposit',
-                    parseFloat(value),
-                    date,
-                    tax
-                ]);
+                if (!(yield TransactionService.depositValue(numeric_social_id, account_type, value, tax))) {
+                    return res.status(500).json({ message: `Could not deposit value` });
+                }
+                if (!(yield TransactionService.registerDepositTransaction(numeric_social_id, account_type, value, date, tax))) {
+                    return res.status(500).json({ message: `Could not store transaction` });
+                }
                 return res.status(200).json({
                     message: `Deposited succesfully ${value - tax} BRL, a deposit tax of ${tax.toFixed(4)} BRL was charged`
                 });
@@ -76,54 +66,45 @@ class TransactionsController {
                 return res.status(400).json({ message: 'Please include the fields social_id, user_password, account_type, account_password, value' });
             }
             try {
-                const db = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
-                if (!db.rows[0]) {
+                const UserService = new users_services_1.UsersServices();
+                const AccountService = new accounts_services_1.AccountsServices();
+                const TransactionValidator = new transactions_validators_1.TransactionsValidators();
+                const TransactionService = new transactions_services_1.TransactionsServices();
+                let numeric_social_id = social_id.split('.').join("");
+                numeric_social_id = numeric_social_id.split('-').join("");
+                if (!(yield UserService.checkUserExists(numeric_social_id))) {
                     return res.status(404).json({ message: 'User not found, please create an user account' });
                 }
-                const user_login = yield bcrypt_1.default.compareSync(user_password, db.rows[0]['password']);
-                if (!user_login) {
-                    return res.status(401).json({
-                        message: "Password is wrong for this user"
-                    });
+                if (!(yield UserService.checkUserLogin(numeric_social_id, user_password))) {
+                    return res.status(401).json({ message: "Password is wrong for this user" });
                 }
                 if (account_type !== 'current' && account_type !== 'savings') {
                     return res.status(400).json({ message: `Please use 'current' or 'savings' as acccount_type` });
                 }
-                const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
-                if (!account.rows[0]) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
-                const account_login = yield bcrypt_1.default.compareSync(account_password, account.rows[0]['password']);
-                if (!account_login) {
-                    return res.status(401).json({
-                        message: "Password is wrong for this account"
-                    });
+                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_type, account_password))) {
+                    return res.status(401).json({ message: "Password is wrong for this account" });
                 }
-                const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-                if (!regex.test(value)) {
+                if (!(yield TransactionValidator.checkPositiveFloat(value))) {
                     return res.status(400).json({ message: 'Please insert a positive numeric value to withdraw, use point (.) instead of comma' });
                 }
                 if (parseFloat(value) < 5) {
-                    return res.status(401).json({ message: 'The minimum ammount to withdraw is 5 BRL' });
+                    return res.status(400).json({ message: 'The minimum ammount to withdraw is 5 BRL' });
                 }
-                if (parseFloat(value) > account.rows[0]['balance']) {
+                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_type, account_password);
+                if (parseFloat(value) > balance) {
                     return res.status(401).json({ message: 'Insufficient funds' });
                 }
                 const tax = 4;
                 const date = new Date();
-                const response = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                    account.rows[0]['balance'] - parseFloat(value),
-                    account.rows[0]['id']
-                ]);
-                const transaction = yield database_1.pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                    (0, uuid_1.v4)(),
-                    account.rows[0]['id'],
-                    null,
-                    'withdraw',
-                    parseFloat(value),
-                    date,
-                    tax
-                ]);
+                if (!(yield TransactionService.withdrawValue(numeric_social_id, account_type, value))) {
+                    return res.status(500).json({ message: `Could not withdraw value` });
+                }
+                if (!(yield TransactionService.registerWithdrawTransaction(numeric_social_id, account_type, value, date, tax))) {
+                    return res.status(500).json({ message: `Could not store transaction` });
+                }
                 return res.status(200).json({
                     message: `Withdrawed succesfully ${value - tax} BRL, a fixed withdraw tax of ${tax} BRL was charged`
                 });
@@ -139,66 +120,54 @@ class TransactionsController {
                 return res.status(400).json({ message: 'Please include the fields social_id, user_password, account_type, account_password, destination_account_id, value' });
             }
             try {
-                const db = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
-                if (!db.rows[0]) {
+                const UserService = new users_services_1.UsersServices();
+                const AccountService = new accounts_services_1.AccountsServices();
+                const TransactionValidator = new transactions_validators_1.TransactionsValidators();
+                const TransactionService = new transactions_services_1.TransactionsServices();
+                let numeric_social_id = social_id.split('.').join("");
+                numeric_social_id = numeric_social_id.split('-').join("");
+                if (!(yield UserService.checkUserExists(numeric_social_id))) {
                     return res.status(404).json({ message: 'User not found, please create an user account' });
                 }
-                const user_login = yield bcrypt_1.default.compareSync(user_password, db.rows[0]['password']);
-                if (!user_login) {
-                    return res.status(401).json({
-                        message: "Password is wrong for this user"
-                    });
+                if (!(yield UserService.checkUserLogin(numeric_social_id, user_password))) {
+                    return res.status(401).json({ message: "Password is wrong for this user" });
                 }
                 if (account_type !== 'current' && account_type !== 'savings') {
                     return res.status(400).json({ message: `Please use 'current' or 'savings' as acccount_type` });
                 }
-                const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
-                if (!account.rows[0]) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
-                const account_login = yield bcrypt_1.default.compareSync(account_password, account.rows[0]['password']);
-                if (!account_login) {
-                    return res.status(401).json({
-                        message: "Password is wrong for this account"
-                    });
+                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_type, account_password))) {
+                    return res.status(401).json({ message: "Password is wrong for this account" });
                 }
-                const uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-                if (!uuid_regex.test(destination_account_id)) {
+                if (!(yield TransactionValidator.checkValidUUID(destination_account_id))) {
                     return res.status(400).json({ message: `The destination account id inserted isn't valid` });
                 }
-                const destination = yield database_1.pool.query('SELECT * FROM accounts WHERE id = $1', [destination_account_id]);
-                if (!destination.rows[0]) {
+                if (!(yield AccountService.checkAccountExistsByUUID(destination_account_id))) {
                     return res.status(401).json({ message: `Account ${destination_account_id} doesn't exist` });
                 }
-                if (destination.rows[0]['id'] == account.rows[0]['id']) {
+                if (yield AccountService.checkAccountsSameUUID(numeric_social_id, account_type, destination_account_id)) {
                     return res.status(401).json({ message: `You can't transfer to the same account` });
                 }
-                const regex = /^(?=.+)(?:[1-9]\d*|0)?(?:\.\d+)?$/;
-                if (!regex.test(value)) {
+                if (!(yield TransactionValidator.checkPositiveFloat(value))) {
                     return res.status(400).json({ message: 'Please insert a positive numeric value to transfer, use point (.) instead of comma' });
                 }
-                if (parseFloat(value) > account.rows[0]['balance']) {
+                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_type, account_password);
+                if (parseFloat(value) > balance) {
                     return res.status(401).json({ message: 'Insufficient funds' });
                 }
                 const tax = 1;
                 const date = new Date();
-                const from = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                    account.rows[0]['balance'] - parseFloat(value),
-                    account.rows[0]['id']
-                ]);
-                const to = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
-                    destination.rows[0]['balance'] + parseFloat(value) - tax,
-                    destination.rows[0]['id']
-                ]);
-                const transaction = yield database_1.pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                    (0, uuid_1.v4)(),
-                    account.rows[0]['id'],
-                    destination.rows[0]['id'],
-                    'transfer',
-                    parseFloat(value),
-                    date,
-                    tax
-                ]);
+                if (!(yield TransactionService.withdrawValue(numeric_social_id, account_type, value))) {
+                    return res.status(500).json({ message: `Could not withdraw value` });
+                }
+                if (!(yield TransactionService.depositValueByUUID(destination_account_id, value, tax))) {
+                    return res.status(500).json({ message: `Could not transfer value` });
+                }
+                if (!(yield TransactionService.registerTransferTransaction(numeric_social_id, account_type, destination_account_id, value, date, tax))) {
+                    return res.status(500).json({ message: `Could not store transaction` });
+                }
                 return res.status(200).json({
                     message: `Transfered succesfully ${value - tax} BRL, a fixed transfer tax of ${tax} BRL was charged`
                 });

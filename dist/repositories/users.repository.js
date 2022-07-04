@@ -36,6 +36,19 @@ class UserRepository {
             else
                 return false;
         });
+        this.loginUser = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            const response = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
+            if (response.rows[0]) {
+                const login = yield bcrypt_1.default.compareSync(password, response.rows[0]['password']);
+                if (login) {
+                    return true;
+                }
+                else
+                    return false;
+            }
+            else
+                return false;
+        });
     }
 }
 exports.UserRepository = UserRepository;

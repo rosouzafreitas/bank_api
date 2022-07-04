@@ -29,9 +29,13 @@ class UsersController {
     }
     
     createUser = async (req: Request, res: Response): Promise<Response> => {
-        try {
-            const { name, birth_date, email, social_id, password } = req.body;
+        const { name, birth_date, email, social_id, password } = req.body;
+    
+        if(!name || !birth_date || !email || !social_id || !password) {
+            return res.status(400).json({message: 'Please include the fields name, birth_date, email, social_id, password'})
+        }
 
+        try {
             const validator = new UsersValidators();
             const service = new UsersServices();
 

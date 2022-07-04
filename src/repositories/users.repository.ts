@@ -23,6 +23,16 @@ class UserRepository {
         } else return false;
     }
 
+    loginUser = async (social_id:string, password:string) => {
+        const response: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [social_id])
+        if(response.rows[0]) {
+            const login = await bcrypt.compareSync(password, response.rows[0]['password']);
+            if(login) {
+                return true;
+            } else return false;
+        } else return false;
+    }
+
 }
 
 export { UserRepository }

@@ -29,6 +29,14 @@ class UsersServices {
             else
                 return false;
         });
+        this.checkUserLogin = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            const repository = new users_repository_1.UserRepository();
+            if (yield repository.loginUser(social_id, password)) {
+                return true;
+            }
+            else
+                return false;
+        });
     }
 }
 exports.UsersServices = UsersServices;
