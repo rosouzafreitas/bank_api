@@ -6,10 +6,8 @@ import bcrypt from "bcrypt";
 const saltRounds = 10;
 
 import { pool } from "../database";
-
-import { CreateUser } from "../services";
-
-import { User } from "../models";
+import { UsersValidators } from "../validators/users.validators";
+import { UsersServices } from "../services/createUser.services";
 
 class UsersController {
   getUsers = async (req: Request, res: Response): Promise<Response> => {
@@ -39,14 +37,55 @@ class UsersController {
   createUser = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { name, birth_date, email, social_id, password } = req.body;
-      const service = new CreateUser(req.body);
 
-      service.validateDate(birth_date);
-      service.validateEmail(email);
-      service.validateSocialId(social_id);
-      service.validatePassword(password);
+      const validator = new UsersValidators();
+      const service = new UsersServices();
 
-      service.writeData();
+      if (!validator.checkDate(birth_date)) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Please insert a valid birth date in the format YYYY-MM-DD",
+          });
+      }
+
+      if (!validator.checkEmail(email)) {
+        return res
+          .status(400)
+          .json({ message: "Please insert a valid e-mail address" });
+      }
+
+      if (!validator.checkSocialId(social_id)) {
+        return res
+          .status(400)
+          .json({ message: "Please insert a valid 11-digit social id" });
+      }
+
+      let numeric_social_id = social_id.split(".").join("");
+      numeric_social_id = numeric_social_id.split("-").join("");
+
+      if (await service.checkUserExists(numeric_social_id)) {
+        return res.status(401).json({ message: "Social ID already in use" });
+      }
+
+      if (!validator.checkUserPassword(password)) {
+        return res
+          .status(400)
+          .json({ message: "Please insert a 6-digit numeric password" });
+      }
+
+      if (
+        !(await service.createUser(
+          name,
+          birth_date,
+          email,
+          numeric_social_id,
+          password
+        ))
+      ) {
+        return res.status(500).json({ message: "Could not create user" });
+      }
 
       return res.status(200).json({
         body: {
@@ -61,12 +100,10 @@ class UsersController {
         message: "User created succesfully",
       });
     } catch (e) {
-      return res.status(500).json({ message: e });
-      //   console.log(e);
-      //   return res.status(500).json({ message: "Could not create user" });
+      console.log(e);
+      return res.status(500).json({ message: "Could not create user" });
     }
   };
-
   updateUser = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id, name, birth_date, email, social_id } = req.body;

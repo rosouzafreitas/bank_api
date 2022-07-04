@@ -12,7 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const saltRounds = 10;
 const database_1 = require("../database");
-const services_1 = require("../services");
+const users_validators_1 = require("../validators/users.validators");
+const createUser_services_1 = require("../services/createUser.services");
 class UsersController {
     constructor() {
         this.getUsers = (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -39,12 +40,38 @@ class UsersController {
         this.createUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { name, birth_date, email, social_id, password } = req.body;
-                const service = new services_1.CreateUser(req.body);
-                service.validateDate(birth_date);
-                service.validateEmail(email);
-                service.validateSocialId(social_id);
-                service.validatePassword(password);
-                service.writeData();
+                const validator = new users_validators_1.UsersValidators();
+                const service = new createUser_services_1.UsersServices();
+                if (!validator.checkDate(birth_date)) {
+                    return res
+                        .status(400)
+                        .json({
+                        message: "Please insert a valid birth date in the format YYYY-MM-DD",
+                    });
+                }
+                if (!validator.checkEmail(email)) {
+                    return res
+                        .status(400)
+                        .json({ message: "Please insert a valid e-mail address" });
+                }
+                if (!validator.checkSocialId(social_id)) {
+                    return res
+                        .status(400)
+                        .json({ message: "Please insert a valid 11-digit social id" });
+                }
+                let numeric_social_id = social_id.split(".").join("");
+                numeric_social_id = numeric_social_id.split("-").join("");
+                if (yield service.checkUserExists(numeric_social_id)) {
+                    return res.status(401).json({ message: "Social ID already in use" });
+                }
+                if (!validator.checkUserPassword(password)) {
+                    return res
+                        .status(400)
+                        .json({ message: "Please insert a 6-digit numeric password" });
+                }
+                if (!(yield service.createUser(name, birth_date, email, numeric_social_id, password))) {
+                    return res.status(500).json({ message: "Could not create user" });
+                }
                 return res.status(200).json({
                     body: {
                         user: {
@@ -59,9 +86,8 @@ class UsersController {
                 });
             }
             catch (e) {
-                return res.status(500).json({ message: e });
-                //   console.log(e);
-                //   return res.status(500).json({ message: "Could not create user" });
+                console.log(e);
+                return res.status(500).json({ message: "Could not create user" });
             }
         });
         this.updateUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
