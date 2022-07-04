@@ -67,7 +67,7 @@ class AccountsController {
                 if (!(yield AccountService.createUserAccount(numeric_social_id, account_type, account_password))) {
                     return res.status(500).json({ message: `Could not create account` });
                 }
-                return res.status(200).json({ message: "Account created successfully" });
+                return res.status(201).json({ message: "Account created successfully" });
             }
             catch (e) {
                 console.log(e);

@@ -64,7 +64,7 @@ class UsersController {
                 if (!(yield service.createUser(name, birth_date, email, numeric_social_id, password))) {
                     return res.status(500).json({ message: 'Could not create user' });
                 }
-                return res.status(200).json({
+                return res.status(201).json({
                     body: {
                         user: {
                             name,
