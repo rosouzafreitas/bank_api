@@ -1,15 +1,10 @@
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
-import { v4 as uuidv4 } from 'uuid';
-
-import bcrypt from 'bcrypt';
-const saltRounds = 10;
 
 import { pool } from '../database';
 
-import { UserServices } from '../services/users.service';
-
-const userServices = new UserServices();
+import { UsersValidators } from '../validators/users.validators';
+import { UsersServices } from '../services/users.services';
 
 class UsersController {
     getUsers = async (req: Request, res: Response): Promise<Response> => {
@@ -37,42 +32,36 @@ class UsersController {
         try {
             const { name, birth_date, email, social_id, password } = req.body;
 
-            if(!userServices.checkDate(birth_date)) {
-                return res.status(400).json({message: 'Please insert a valid birth date in the format DD/MM/YYYY'})
+            const validator = new UsersValidators();
+            const service = new UsersServices();
+
+            if(!validator.checkDate(birth_date)) {
+                return res.status(400).json({message: 'Please insert a valid birth date in the format YYYY-MM-DD'})
             }
 
-            if(!userServices.checkEmail(email)) {
+            if(!validator.checkEmail(email)) {
                 return res.status(400).json({message: 'Please insert a valid e-mail address'})
             }
 
-            const social_id_regex = /(\d{3})[.]?(\d{3})[.]?(\d{3})[-]?(\d{2})/gm;
-
-            if(!social_id_regex.test(social_id)) {
-                return res.status(400).json({message: 'Please insert a valid social id'})
+            if(!validator.checkSocialId(social_id)) {
+                return res.status(400).json({message: 'Please insert a valid 11-digit social id'})
             }
 
             let numeric_social_id = social_id.split('.').join("");
             numeric_social_id = numeric_social_id.split('-').join("");
-
-            if(numeric_social_id.length > 11) {
-                return res.status(400).json({message: 'Please insert an 11 digit social id'})
-            }
-
-            const user: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [numeric_social_id])
     
-            if(user.rows[0]) {
+            if(await service.checkUserExists(numeric_social_id)) {
                 return res.status(401).json({message: 'Social ID already in use'});
             }
-    
-            const password_regex = /^\d+$/;
             
-            if(password.length < 6 || password.length > 6 || !password_regex.test(password)) {
+            if(!validator.checkUserPassword(password)) {
                 return res.status(400).json({message: 'Please insert a 6-digit numeric password'})
             }
-    
-            const hashPassword = await bcrypt.hash(password, saltRounds);
-    
-            const response: QueryResult = await pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [uuidv4(), name, birth_date, email, numeric_social_id, hashPassword])
+
+            if(!await service.createUser(name, birth_date, email, numeric_social_id, password)) {
+                return res.status(500).json({message: 'Could not create user'})
+            }
+
             return res.status(200).json({
                 body: {
                     user: {

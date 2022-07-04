@@ -8,17 +8,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
-const uuid_1 = require("uuid");
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const saltRounds = 10;
 const database_1 = require("../database");
-const users_service_1 = require("../services/users.service");
-const userServices = new users_service_1.UserServices();
+const users_validators_1 = require("../validators/users.validators");
+const users_services_1 = require("../services/users.services");
 class UsersController {
     constructor() {
         this.getUsers = (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -45,31 +39,28 @@ class UsersController {
         this.createUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const { name, birth_date, email, social_id, password } = req.body;
-                if (!userServices.checkDate(birth_date)) {
-                    return res.status(400).json({ message: 'Please insert a valid birth date in the format DD/MM/YYYY' });
+                const validator = new users_validators_1.UsersValidators();
+                const service = new users_services_1.UsersServices();
+                if (!validator.checkDate(birth_date)) {
+                    return res.status(400).json({ message: 'Please insert a valid birth date in the format YYYY-MM-DD' });
                 }
-                if (!userServices.checkEmail(email)) {
+                if (!validator.checkEmail(email)) {
                     return res.status(400).json({ message: 'Please insert a valid e-mail address' });
                 }
-                const social_id_regex = /(\d{3})[.]?(\d{3})[.]?(\d{3})[-]?(\d{2})/gm;
-                if (!social_id_regex.test(social_id)) {
-                    return res.status(400).json({ message: 'Please insert a valid social id' });
+                if (!validator.checkSocialId(social_id)) {
+                    return res.status(400).json({ message: 'Please insert a valid 11-digit social id' });
                 }
                 let numeric_social_id = social_id.split('.').join("");
                 numeric_social_id = numeric_social_id.split('-').join("");
-                if (numeric_social_id.length > 11) {
-                    return res.status(400).json({ message: 'Please insert an 11 digit social id' });
-                }
-                const user = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [numeric_social_id]);
-                if (user.rows[0]) {
+                if (yield service.checkUserExists(numeric_social_id)) {
                     return res.status(401).json({ message: 'Social ID already in use' });
                 }
-                const password_regex = /^\d+$/;
-                if (password.length < 6 || password.length > 6 || !password_regex.test(password)) {
+                if (!validator.checkUserPassword(password)) {
                     return res.status(400).json({ message: 'Please insert a 6-digit numeric password' });
                 }
-                const hashPassword = yield bcrypt_1.default.hash(password, saltRounds);
-                const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [(0, uuid_1.v4)(), name, birth_date, email, numeric_social_id, hashPassword]);
+                if (!(yield service.createUser(name, birth_date, email, numeric_social_id, password))) {
+                    return res.status(500).json({ message: 'Could not create user' });
+                }
                 return res.status(200).json({
                     body: {
                         user: {

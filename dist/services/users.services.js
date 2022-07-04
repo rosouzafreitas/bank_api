@@ -8,29 +8,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserRepository = void 0;
-const uuid_1 = require("uuid");
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const saltRounds = 10;
-const database_1 = require("../database");
-class UserRepository {
+exports.UsersServices = void 0;
+const users_repository_1 = require("../repositories/users.repository");
+class UsersServices {
     constructor() {
-        this.checkUser = (social_id) => __awaiter(this, void 0, void 0, function* () {
-            const response = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
-            if (response.rows[0]) {
+        this.checkUserExists = (social_id) => __awaiter(this, void 0, void 0, function* () {
+            const repository = new users_repository_1.UserRepository();
+            if (yield repository.checkUser(social_id)) {
                 return true;
             }
             else
                 return false;
         });
         this.createUser = (name, birth_date, email, social_id, password) => __awaiter(this, void 0, void 0, function* () {
-            const hashPassword = yield bcrypt_1.default.hash(password, saltRounds);
-            const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [(0, uuid_1.v4)(), name, birth_date, email, social_id, hashPassword]);
-            if (!response.rows[0]) {
+            const repository = new users_repository_1.UserRepository();
+            if (yield repository.createUser(name, birth_date, email, social_id, password)) {
                 return true;
             }
             else
@@ -38,4 +31,4 @@ class UserRepository {
         });
     }
 }
-exports.UserRepository = UserRepository;
+exports.UsersServices = UsersServices;
