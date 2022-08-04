@@ -21,9 +21,9 @@ class UsersServices {
             else
                 return false;
         });
-        this.createUser = (name, birth_date, email, social_id, password) => __awaiter(this, void 0, void 0, function* () {
+        this.createUser = (name, birth_date, email, social_id) => __awaiter(this, void 0, void 0, function* () {
             const repository = new users_repository_1.UserRepository();
-            if (yield repository.createUser(name, birth_date, email, social_id, password)) {
+            if (yield repository.createUser(name, birth_date, email, social_id)) {
                 return true;
             }
             else

@@ -13,9 +13,9 @@ exports.AccountsServices = void 0;
 const accounts_repository_1 = require("../repositories/accounts.repository");
 class AccountsServices {
     constructor() {
-        this.checkAccountExists = (social_id, account_type) => __awaiter(this, void 0, void 0, function* () {
+        this.checkAccountExists = (social_id) => __awaiter(this, void 0, void 0, function* () {
             const repository = new accounts_repository_1.AccountRepository();
-            if (yield repository.checkAccount(social_id, account_type)) {
+            if (yield repository.checkAccount(social_id)) {
                 return true;
             }
             else
@@ -37,18 +37,18 @@ class AccountsServices {
             else
                 return false;
         });
-        this.createUserAccount = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
+        this.createUserAccount = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
             const repository = new accounts_repository_1.AccountRepository();
-            if (yield repository.createAccount(social_id, account_type, password)) {
+            if (yield repository.createAccount(social_id, password)) {
                 return true;
             }
             else
                 return false;
         });
-        this.checkAccountLogin = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            if (yield this.checkAccountExists(social_id, account_type)) {
+        this.checkAccountLogin = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            if (yield this.checkAccountExists(social_id)) {
                 const repository = new accounts_repository_1.AccountRepository();
-                if (yield repository.loginAccount(social_id, account_type, password)) {
+                if (yield repository.loginAccount(social_id, password)) {
                     return true;
                 }
                 else
@@ -57,11 +57,11 @@ class AccountsServices {
             else
                 return false;
         });
-        this.getAccountFunds = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            if (yield this.checkAccountExists(social_id, account_type)) {
+        this.getAccountFunds = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            if (yield this.checkAccountExists(social_id)) {
                 const repository = new accounts_repository_1.AccountRepository();
-                if (yield repository.getFunds(social_id, account_type, password)) {
-                    return repository.getFunds(social_id, account_type, password);
+                if (yield repository.getFunds(social_id, password)) {
+                    return repository.getFunds(social_id, password);
                 }
                 else
                     return false;
@@ -69,11 +69,11 @@ class AccountsServices {
             else
                 return false;
         });
-        this.getAccountStatement = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            if (yield this.checkAccountExists(social_id, account_type)) {
+        this.getAccountStatement = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            if (yield this.checkAccountExists(social_id)) {
                 const repository = new accounts_repository_1.AccountRepository();
-                if (yield repository.getStatement(social_id, account_type, password)) {
-                    return repository.getStatement(social_id, account_type, password);
+                if (yield repository.getStatement(social_id, password)) {
+                    return repository.getStatement(social_id, password);
                 }
                 else
                     return false;

@@ -14,10 +14,8 @@ class UserRepository {
         } else return false;
     }
 
-    createUser = async (name:string, birth_date:string, email:string, social_id:string, password:string) => {
-        const hashPassword = await bcrypt.hash(password, saltRounds);
-
-        const response: QueryResult = await pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [uuidv4(), name, birth_date, email, social_id, hashPassword])
+    createUser = async (name:string, birth_date:string, email:string, social_id:string) => {
+        const response: QueryResult = await pool.query('INSERT INTO users (id, name, birth_date, email, social_id) VALUES ($1, $2, $3, $4, $5)', [uuidv4(), name, birth_date, email, social_id])
         if(!response.rows[0]) {
             return true;
         } else return false;

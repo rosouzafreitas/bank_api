@@ -8,9 +8,9 @@ class UsersServices {
         } else return false;
     }
 
-    createUser = async (name:string, birth_date:string, email:string, social_id:string, password:string) => {
+    createUser = async (name:string, birth_date:string, email:string, social_id:string) => {
         const repository = new UserRepository();
-        if(await repository.createUser(name, birth_date, email, social_id, password)) {
+        if(await repository.createUser(name, birth_date, email, social_id)) {
             return true;
         } else return false;
     }

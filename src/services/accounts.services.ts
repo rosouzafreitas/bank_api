@@ -1,9 +1,9 @@
 import { AccountRepository } from "../repositories/accounts.repository";
 
 class AccountsServices {
-    checkAccountExists = async (social_id:string, account_type:string) => {
+    checkAccountExists = async (social_id:string) => {
         const repository = new AccountRepository();
-        if(await repository.checkAccount(social_id, account_type)) {
+        if(await repository.checkAccount(social_id)) {
             return true;
         } else return false;
     }
@@ -22,36 +22,36 @@ class AccountsServices {
         } else return false;
     }
 
-    createUserAccount = async (social_id:string, account_type:string, password:string) => {
+    createUserAccount = async (social_id:string, password:string) => {
         const repository = new AccountRepository();
-        if(await repository.createAccount(social_id, account_type, password)) {
+        if(await repository.createAccount(social_id, password)) {
             return true;
         } else return false;
     }
 
-    checkAccountLogin = async (social_id:string, account_type:string, password:string) => {
-        if(await this.checkAccountExists(social_id, account_type)) {
+    checkAccountLogin = async (social_id:string, password:string) => {
+        if(await this.checkAccountExists(social_id)) {
             const repository = new AccountRepository();
-            if(await repository.loginAccount(social_id, account_type, password)) {
+            if(await repository.loginAccount(social_id, password)) {
                 return true;
             } else return false;
         } else return false;
     }
 
-    getAccountFunds = async (social_id:string, account_type:string, password:string) => {
-        if(await this.checkAccountExists(social_id, account_type)) {
+    getAccountFunds = async (social_id:string, password:string) => {
+        if(await this.checkAccountExists(social_id)) {
             const repository = new AccountRepository();
-            if(await repository.getFunds(social_id, account_type, password)) {
-                return repository.getFunds(social_id, account_type, password);
+            if(await repository.getFunds(social_id, password)) {
+                return repository.getFunds(social_id, password);
             } else return false;
         } else return false;
     }
 
-    getAccountStatement = async (social_id:string, account_type:string, password:string) => {
-        if(await this.checkAccountExists(social_id, account_type)) {
+    getAccountStatement = async (social_id:string, password:string) => {
+        if(await this.checkAccountExists(social_id)) {
             const repository = new AccountRepository();
-            if(await repository.getStatement(social_id, account_type, password)) {
-                return repository.getStatement(social_id, account_type, password);
+            if(await repository.getStatement(social_id, password)) {
+                return repository.getStatement(social_id, password);
             } else return false;
         } else return false;
     }

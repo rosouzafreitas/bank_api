@@ -34,7 +34,7 @@ class TransactionsController {
                 return res.status(400).json({message: `Please use 'current' or 'savings' as account_type`})
             }
 
-            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
+            if(!await AccountService.checkAccountExists(numeric_social_id)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
     
@@ -46,11 +46,11 @@ class TransactionsController {
     
             const date = new Date();
 
-            if(!await TransactionService.depositValue(numeric_social_id, account_type, value, tax)) {
+            if(!await TransactionService.depositValue(numeric_social_id, value, tax)) {
                 return res.status(500).json({message: `Could not deposit value`});
             }
 
-            if(!await TransactionService.registerDepositTransaction(numeric_social_id, account_type, value, date, tax)) {
+            if(!await TransactionService.registerDepositTransaction(numeric_social_id, value, date, tax)) {
                 return res.status(500).json({message: `Could not store transaction`});
             }
 
@@ -92,11 +92,11 @@ class TransactionsController {
                 return res.status(400).json({message: `Please use 'current' or 'savings' as acccount_type`})
             }
 
-            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
+            if(!await AccountService.checkAccountExists(numeric_social_id)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
         
-            if(!await AccountService.checkAccountLogin(numeric_social_id, account_type, account_password)) {
+            if(!await AccountService.checkAccountLogin(numeric_social_id, account_password)) {
                 return res.status(401).json({message: "Password is wrong for this account"});
             }
     
@@ -108,7 +108,7 @@ class TransactionsController {
                 return res.status(400).json({message: 'The minimum ammount to withdraw is 5 BRL'})
             }
 
-            const balance = await AccountService.getAccountFunds(numeric_social_id, account_type, account_password)
+            const balance = await AccountService.getAccountFunds(numeric_social_id, account_password)
     
             if(parseFloat(value) > balance) {
                 return res.status(401).json({message: 'Insufficient funds'})
@@ -118,11 +118,11 @@ class TransactionsController {
     
             const date = new Date();
 
-            if(!await TransactionService.withdrawValue(numeric_social_id, account_type, value)) {
+            if(!await TransactionService.withdrawValue(numeric_social_id, value)) {
                 return res.status(500).json({message: `Could not withdraw value`});
             }
 
-            if(!await TransactionService.registerWithdrawTransaction(numeric_social_id, account_type, value, date, tax)) {
+            if(!await TransactionService.registerWithdrawTransaction(numeric_social_id, value, date, tax)) {
                 return res.status(500).json({message: `Could not store transaction`});
             }
 
@@ -171,11 +171,11 @@ class TransactionsController {
                 return res.status(400).json({message: `Please use 'current' or 'savings' as acccount_type`})
             }
 
-            if(!await AccountService.checkAccountExists(numeric_social_id, account_type)) {
+            if(!await AccountService.checkAccountExists(numeric_social_id)) {
                 return res.status(401).json({message: `User doesn't have an ${account_type} account`});
             }
         
-            if(!await AccountService.checkAccountLogin(numeric_social_id, account_type, account_password)) {
+            if(!await AccountService.checkAccountLogin(numeric_social_id, account_password)) {
                 return res.status(401).json({message: "Password is wrong for this account"});
             }
         
@@ -195,7 +195,7 @@ class TransactionsController {
                 return res.status(400).json({message: 'Please insert a positive numeric value to transfer, use point (.) instead of comma'})
             }
 
-            const balance = await AccountService.getAccountFunds(numeric_social_id, account_type, account_password)
+            const balance = await AccountService.getAccountFunds(numeric_social_id, account_password)
     
             if(parseFloat(value) > balance) {
                 return res.status(401).json({message: 'Insufficient funds'})
@@ -205,7 +205,7 @@ class TransactionsController {
     
             const date = new Date();
 
-            if(!await TransactionService.withdrawValue(numeric_social_id, account_type, value)) {
+            if(!await TransactionService.withdrawValue(numeric_social_id, value)) {
                 return res.status(500).json({message: `Could not withdraw value`});
             }
 
@@ -213,7 +213,7 @@ class TransactionsController {
                 return res.status(500).json({message: `Could not transfer value`});
             }
 
-            if(!await TransactionService.registerTransferTransaction(numeric_social_id, account_type, destination_account_id, value, date, tax)) {
+            if(!await TransactionService.registerTransferTransaction(numeric_social_id, destination_account_id, value, date, tax)) {
                 return res.status(500).json({message: `Could not store transaction`});
             }
     

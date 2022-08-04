@@ -7,8 +7,8 @@ const saltRounds = 10;
 import { pool } from '../database';
 
 class AccountRepository {
-    checkAccount = async (social_id:string, account_type:string) => {
-        const response: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
+    checkAccount = async (social_id:string) => {
+        const response: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id])
         if(response.rows[0]) {
             return true;
         } else return false;
@@ -30,7 +30,7 @@ class AccountRepository {
         } else return false;
     }
 
-    createAccount = async (social_id:string, account_type:string, password:string) => {
+    createAccount = async (social_id:string, password:string) => {
         const user: QueryResult = await pool.query('SELECT * FROM users WHERE social_id = $1', [social_id])
         if(user.rows[0]) {
             const agency_number = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -39,13 +39,12 @@ class AccountRepository {
             const account_digit = Math.floor(Math.random() * (9 - 0 + 1));
             const hashPassword = await bcrypt.hash(password, saltRounds);
     
-            const response: QueryResult = await pool.query('INSERT INTO accounts (id, agency_number, agency_digit, account_number, account_digit, account_type, balance, user_id, social_id, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', [
+            const response: QueryResult = await pool.query('INSERT INTO accounts (id, agency_number, agency_digit, account_number, account_digit, balance, user_id, social_id, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [
                 uuidv4(),
                 agency_number,
                 agency_digit, 
                 account_number,
                 account_digit,
-                account_type,
                 0,
                 user.rows[0]['id'],
                 user.rows[0]['social_id'],
@@ -56,8 +55,8 @@ class AccountRepository {
         } else return false;
     }
 
-    loginAccount = async (social_id:string, account_type:string, password:string) => {
-        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
+    loginAccount = async (social_id:string, password:string) => {
+        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id])
         if(account.rows[0]) {
             const account_login = await bcrypt.compareSync(password, account.rows[0]['password']);
             if(account_login) {
@@ -66,8 +65,8 @@ class AccountRepository {
         } else return false;
     }
 
-    getFunds = async (social_id:string, account_type:string, password:string) => {
-        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
+    getFunds = async (social_id:string, password:string) => {
+        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id])
         if(account.rows[0]) {
             const account_login = await bcrypt.compareSync(password, account.rows[0]['password']);
             if(account_login) {
@@ -76,8 +75,8 @@ class AccountRepository {
         } else return false;
     }
 
-    getStatement = async (social_id:string, account_type:string, password:string) => {
-        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type])
+    getStatement = async (social_id:string, password:string) => {
+        const account: QueryResult = await pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id])
         if(account.rows[0]) {
             const account_login = await bcrypt.compareSync(password, account.rows[0]['password']);
             if(account_login) {

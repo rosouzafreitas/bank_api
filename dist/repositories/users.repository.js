@@ -27,9 +27,8 @@ class UserRepository {
             else
                 return false;
         });
-        this.createUser = (name, birth_date, email, social_id, password) => __awaiter(this, void 0, void 0, function* () {
-            const hashPassword = yield bcrypt_1.default.hash(password, saltRounds);
-            const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id, password) VALUES ($1, $2, $3, $4, $5, $6)', [(0, uuid_1.v4)(), name, birth_date, email, social_id, hashPassword]);
+        this.createUser = (name, birth_date, email, social_id) => __awaiter(this, void 0, void 0, function* () {
+            const response = yield database_1.pool.query('INSERT INTO users (id, name, birth_date, email, social_id) VALUES ($1, $2, $3, $4, $5)', [(0, uuid_1.v4)(), name, birth_date, email, social_id]);
             if (!response.rows[0]) {
                 return true;
             }

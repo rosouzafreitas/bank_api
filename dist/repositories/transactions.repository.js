@@ -14,8 +14,8 @@ const uuid_1 = require("uuid");
 const database_1 = require("../database");
 class TransactionRepository {
     constructor() {
-        this.depositIntoAccount = (social_id, account_type, value, tax) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.depositIntoAccount = (social_id, value, tax) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const response = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
                     account.rows[0]['balance'] + parseFloat(value) - tax,
@@ -38,8 +38,8 @@ class TransactionRepository {
             else
                 return false;
         });
-        this.withdrawFromAccount = (social_id, account_type, value) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.withdrawFromAccount = (social_id, value) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const response = yield database_1.pool.query('UPDATE accounts SET balance = $1 WHERE id = $2', [
                     account.rows[0]['balance'] - parseFloat(value),
@@ -50,8 +50,8 @@ class TransactionRepository {
             else
                 return false;
         });
-        this.storeDeposit = (social_id, account_type, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.storeDeposit = (social_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const response = yield database_1.pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                     (0, uuid_1.v4)(),
@@ -67,8 +67,8 @@ class TransactionRepository {
             else
                 return false;
         });
-        this.storeWithdraw = (social_id, account_type, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.storeWithdraw = (social_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const response = yield database_1.pool.query('INSERT INTO transactions (id, origin_account, destination_account, transaction_type, value, date, tax) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                     (0, uuid_1.v4)(),
@@ -84,8 +84,8 @@ class TransactionRepository {
             else
                 return false;
         });
-        this.storeTransfer = (social_id, account_type, destination_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.storeTransfer = (social_id, destination_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const destination = yield database_1.pool.query('SELECT * FROM accounts WHERE id = $1', [destination_id]);
                 if (destination.rows[0]) {

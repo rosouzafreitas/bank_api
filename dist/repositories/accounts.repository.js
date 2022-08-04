@@ -19,8 +19,8 @@ const saltRounds = 10;
 const database_1 = require("../database");
 class AccountRepository {
     constructor() {
-        this.checkAccount = (social_id, account_type) => __awaiter(this, void 0, void 0, function* () {
-            const response = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.checkAccount = (social_id) => __awaiter(this, void 0, void 0, function* () {
+            const response = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (response.rows[0]) {
                 return true;
             }
@@ -47,7 +47,7 @@ class AccountRepository {
             else
                 return false;
         });
-        this.createAccount = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
+        this.createAccount = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
             const user = yield database_1.pool.query('SELECT * FROM users WHERE social_id = $1', [social_id]);
             if (user.rows[0]) {
                 const agency_number = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -55,13 +55,12 @@ class AccountRepository {
                 const account_number = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
                 const account_digit = Math.floor(Math.random() * (9 - 0 + 1));
                 const hashPassword = yield bcrypt_1.default.hash(password, saltRounds);
-                const response = yield database_1.pool.query('INSERT INTO accounts (id, agency_number, agency_digit, account_number, account_digit, account_type, balance, user_id, social_id, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', [
+                const response = yield database_1.pool.query('INSERT INTO accounts (id, agency_number, agency_digit, account_number, account_digit, balance, user_id, social_id, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [
                     (0, uuid_1.v4)(),
                     agency_number,
                     agency_digit,
                     account_number,
                     account_digit,
-                    account_type,
                     0,
                     user.rows[0]['id'],
                     user.rows[0]['social_id'],
@@ -72,8 +71,8 @@ class AccountRepository {
             else
                 return false;
         });
-        this.loginAccount = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.loginAccount = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const account_login = yield bcrypt_1.default.compareSync(password, account.rows[0]['password']);
                 if (account_login) {
@@ -85,8 +84,8 @@ class AccountRepository {
             else
                 return false;
         });
-        this.getFunds = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.getFunds = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const account_login = yield bcrypt_1.default.compareSync(password, account.rows[0]['password']);
                 if (account_login) {
@@ -98,8 +97,8 @@ class AccountRepository {
             else
                 return false;
         });
-        this.getStatement = (social_id, account_type, password) => __awaiter(this, void 0, void 0, function* () {
-            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1 AND account_type = $2', [social_id, account_type]);
+        this.getStatement = (social_id, password) => __awaiter(this, void 0, void 0, function* () {
+            const account = yield database_1.pool.query('SELECT * FROM accounts WHERE social_id = $1', [social_id]);
             if (account.rows[0]) {
                 const account_login = yield bcrypt_1.default.compareSync(password, account.rows[0]['password']);
                 if (account_login) {

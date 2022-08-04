@@ -5,8 +5,7 @@ CREATE TABLE users (
     name VARCHAR(255),
     birth_date DATE,
     email VARCHAR(255),
-    social_id VARCHAR(11) UNIQUE,
-    password VARCHAR(255)
+    social_id VARCHAR(11) UNIQUE
 );
 
 CREATE TABLE accounts (
@@ -15,7 +14,6 @@ CREATE TABLE accounts (
     agency_digit INT,
     account_number VARCHAR(6),
     account_digit INT,
-    account_type VARCHAR(7),
     balance REAL,
     user_id UUID,
     social_id VARCHAR(11),

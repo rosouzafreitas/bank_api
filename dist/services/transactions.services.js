@@ -13,9 +13,9 @@ exports.TransactionsServices = void 0;
 const transactions_repository_1 = require("../repositories/transactions.repository");
 class TransactionsServices {
     constructor() {
-        this.depositValue = (social_id, account_type, value, tax) => __awaiter(this, void 0, void 0, function* () {
+        this.depositValue = (social_id, value, tax) => __awaiter(this, void 0, void 0, function* () {
             const repository = new transactions_repository_1.TransactionRepository();
-            if (yield repository.depositIntoAccount(social_id, account_type, value, tax)) {
+            if (yield repository.depositIntoAccount(social_id, value, tax)) {
                 return true;
             }
             else
@@ -29,33 +29,33 @@ class TransactionsServices {
             else
                 return false;
         });
-        this.withdrawValue = (social_id, account_type, value) => __awaiter(this, void 0, void 0, function* () {
+        this.withdrawValue = (social_id, value) => __awaiter(this, void 0, void 0, function* () {
             const repository = new transactions_repository_1.TransactionRepository();
-            if (yield repository.withdrawFromAccount(social_id, account_type, value)) {
+            if (yield repository.withdrawFromAccount(social_id, value)) {
                 return true;
             }
             else
                 return false;
         });
-        this.registerDepositTransaction = (social_id, account_type, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+        this.registerDepositTransaction = (social_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
             const repository = new transactions_repository_1.TransactionRepository();
-            if (yield repository.storeDeposit(social_id, account_type, value, date, tax)) {
+            if (yield repository.storeDeposit(social_id, value, date, tax)) {
                 return true;
             }
             else
                 return false;
         });
-        this.registerWithdrawTransaction = (social_id, account_type, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+        this.registerWithdrawTransaction = (social_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
             const repository = new transactions_repository_1.TransactionRepository();
-            if (yield repository.storeWithdraw(social_id, account_type, value, date, tax)) {
+            if (yield repository.storeWithdraw(social_id, value, date, tax)) {
                 return true;
             }
             else
                 return false;
         });
-        this.registerTransferTransaction = (social_id, account_type, destination_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
+        this.registerTransferTransaction = (social_id, destination_id, value, date, tax) => __awaiter(this, void 0, void 0, function* () {
             const repository = new transactions_repository_1.TransactionRepository();
-            if (yield repository.storeTransfer(social_id, account_type, destination_id, value, date, tax)) {
+            if (yield repository.storeTransfer(social_id, destination_id, value, date, tax)) {
                 return true;
             }
             else

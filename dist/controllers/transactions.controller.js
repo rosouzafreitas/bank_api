@@ -37,7 +37,7 @@ class TransactionsController {
                 if (account_type !== 'current' && account_type !== 'savings') {
                     return res.status(400).json({ message: `Please use 'current' or 'savings' as account_type` });
                 }
-                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
                 if (!(yield TransactionValidator.checkPositiveFloat(value))) {
@@ -45,10 +45,10 @@ class TransactionsController {
                 }
                 const tax = parseFloat(value) * 0.01;
                 const date = new Date();
-                if (!(yield TransactionService.depositValue(numeric_social_id, account_type, value, tax))) {
+                if (!(yield TransactionService.depositValue(numeric_social_id, value, tax))) {
                     return res.status(500).json({ message: `Could not deposit value` });
                 }
-                if (!(yield TransactionService.registerDepositTransaction(numeric_social_id, account_type, value, date, tax))) {
+                if (!(yield TransactionService.registerDepositTransaction(numeric_social_id, value, date, tax))) {
                     return res.status(500).json({ message: `Could not store transaction` });
                 }
                 return res.status(200).json({
@@ -81,10 +81,10 @@ class TransactionsController {
                 if (account_type !== 'current' && account_type !== 'savings') {
                     return res.status(400).json({ message: `Please use 'current' or 'savings' as acccount_type` });
                 }
-                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
-                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_type, account_password))) {
+                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_password))) {
                     return res.status(401).json({ message: "Password is wrong for this account" });
                 }
                 if (!(yield TransactionValidator.checkPositiveFloat(value))) {
@@ -93,16 +93,16 @@ class TransactionsController {
                 if (parseFloat(value) < 5) {
                     return res.status(400).json({ message: 'The minimum ammount to withdraw is 5 BRL' });
                 }
-                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_type, account_password);
+                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_password);
                 if (parseFloat(value) > balance) {
                     return res.status(401).json({ message: 'Insufficient funds' });
                 }
                 const tax = 4;
                 const date = new Date();
-                if (!(yield TransactionService.withdrawValue(numeric_social_id, account_type, value))) {
+                if (!(yield TransactionService.withdrawValue(numeric_social_id, value))) {
                     return res.status(500).json({ message: `Could not withdraw value` });
                 }
-                if (!(yield TransactionService.registerWithdrawTransaction(numeric_social_id, account_type, value, date, tax))) {
+                if (!(yield TransactionService.registerWithdrawTransaction(numeric_social_id, value, date, tax))) {
                     return res.status(500).json({ message: `Could not store transaction` });
                 }
                 return res.status(200).json({
@@ -135,10 +135,10 @@ class TransactionsController {
                 if (account_type !== 'current' && account_type !== 'savings') {
                     return res.status(400).json({ message: `Please use 'current' or 'savings' as acccount_type` });
                 }
-                if (!(yield AccountService.checkAccountExists(numeric_social_id, account_type))) {
+                if (!(yield AccountService.checkAccountExists(numeric_social_id))) {
                     return res.status(401).json({ message: `User doesn't have an ${account_type} account` });
                 }
-                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_type, account_password))) {
+                if (!(yield AccountService.checkAccountLogin(numeric_social_id, account_password))) {
                     return res.status(401).json({ message: "Password is wrong for this account" });
                 }
                 if (!(yield TransactionValidator.checkValidUUID(destination_account_id))) {
@@ -153,19 +153,19 @@ class TransactionsController {
                 if (!(yield TransactionValidator.checkPositiveFloat(value))) {
                     return res.status(400).json({ message: 'Please insert a positive numeric value to transfer, use point (.) instead of comma' });
                 }
-                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_type, account_password);
+                const balance = yield AccountService.getAccountFunds(numeric_social_id, account_password);
                 if (parseFloat(value) > balance) {
                     return res.status(401).json({ message: 'Insufficient funds' });
                 }
                 const tax = 1;
                 const date = new Date();
-                if (!(yield TransactionService.withdrawValue(numeric_social_id, account_type, value))) {
+                if (!(yield TransactionService.withdrawValue(numeric_social_id, value))) {
                     return res.status(500).json({ message: `Could not withdraw value` });
                 }
                 if (!(yield TransactionService.depositValueByUUID(destination_account_id, value, tax))) {
                     return res.status(500).json({ message: `Could not transfer value` });
                 }
-                if (!(yield TransactionService.registerTransferTransaction(numeric_social_id, account_type, destination_account_id, value, date, tax))) {
+                if (!(yield TransactionService.registerTransferTransaction(numeric_social_id, destination_account_id, value, date, tax))) {
                     return res.status(500).json({ message: `Could not store transaction` });
                 }
                 return res.status(200).json({

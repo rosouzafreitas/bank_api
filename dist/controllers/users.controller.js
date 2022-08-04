@@ -25,21 +25,9 @@ class UsersController {
                 return res.status(500).json('Internal Server Error');
             }
         });
-        this.getUserById = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = req.params.id;
-                const response = yield database_1.pool.query('SELECT * FROM users WHERE id = $1', [id]);
-                return res.status(200).json(response.rows);
-            }
-            catch (e) {
-                console.log(e);
-                return res.status(500).json('User not found');
-            }
-        });
-        this.createUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const { name, birth_date, email, social_id, password } = req.body;
-            if (!name || !birth_date || !email || !social_id || !password) {
-                return res.status(400).json({ message: 'Please include the fields name, birth_date, email, social_id, password' });
+        this.createUser = (req, res, name, birth_date, social_id, email) => __awaiter(this, void 0, void 0, function* () {
+            if (!name || !birth_date || !social_id || !email) {
+                return res.status(400).json({ message: 'Please include the fields name, birth_date, social_id, email' });
             }
             try {
                 const validator = new users_validators_1.UsersValidators();
@@ -58,10 +46,7 @@ class UsersController {
                 if (yield service.checkUserExists(numeric_social_id)) {
                     return res.status(401).json({ message: 'Social ID already in use' });
                 }
-                if (!validator.checkUserPassword(password)) {
-                    return res.status(400).json({ message: 'Please insert a 6-digit numeric password' });
-                }
-                if (!(yield service.createUser(name, birth_date, email, numeric_social_id, password))) {
+                if (!(yield service.createUser(name, birth_date, email, numeric_social_id))) {
                     return res.status(500).json({ message: 'Could not create user' });
                 }
                 return res.status(201).json({
@@ -71,7 +56,6 @@ class UsersController {
                             birth_date,
                             email,
                             social_id,
-                            password
                         }
                     },
                     message: "User created succesfully"
@@ -80,38 +64,6 @@ class UsersController {
             catch (e) {
                 console.log(e);
                 return res.status(500).json({ message: 'Could not create user' });
-            }
-        });
-        this.updateUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { id, name, birth_date, email, social_id } = req.body;
-                const response = yield database_1.pool.query('UPDATE users SET name = $1, birth_date = $2, email = $3, social_id = $4 WHERE id = $5', [name, birth_date, email, social_id, id]);
-                return res.status(200).json({
-                    body: {
-                        user: {
-                            name,
-                            birth_date,
-                            email,
-                            social_id
-                        }
-                    },
-                    message: "User updated succesfully"
-                });
-            }
-            catch (e) {
-                console.log(e);
-                return res.status(500).json('Could not update user');
-            }
-        });
-        this.deleteUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const id = req.params.id;
-                const response = yield database_1.pool.query('DELETE FROM users WHERE id = $1', [id]);
-                return res.status(200).json(`User ${id} deleted successfully`);
-            }
-            catch (e) {
-                console.log(e);
-                return res.status(500).json('User not found');
             }
         });
     }
